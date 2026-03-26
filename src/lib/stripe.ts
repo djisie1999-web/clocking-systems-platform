@@ -4,11 +4,9 @@ import { Plan, SubscriptionStatus } from "@prisma/client";
 
 // ─── Stripe Client ────────────────────────────────────────────────────────────
 
-if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error("STRIPE_SECRET_KEY environment variable is not set");
-}
+const stripeKey = process.env.STRIPE_SECRET_KEY || "sk_test_placeholder";
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+export const stripe = new Stripe(stripeKey, {
   apiVersion: "2026-03-25.dahlia" as Stripe.LatestApiVersion,
   typescript: true,
 });
