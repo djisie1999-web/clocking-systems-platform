@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: "standalone",
+  // Using default output (not standalone) so `next start` serves static assets correctly
 };
 
 export default nextConfig;
