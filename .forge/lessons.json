@@ -1,0 +1,28 @@
+[
+  {
+    "id": "8ebce0d2-497f-4302-9fca-d885c1a7446f",
+    "projectId": "forge-1774548235030",
+    "createdAt": "2026-03-26T18:23:04.905Z",
+    "stageId": "core-features",
+    "workPackageId": "core-features-1",
+    "type": "failure",
+    "category": "other",
+    "description": "Claude Code process exited with code 3221226505",
+    "rootCause": "Unclassified error: Claude Code process exited with code 3221226505",
+    "resolution": "Pending retry with adjusted approach",
+    "preventionRule": "Watch for: Claude Code process exited with code 3221226505"
+  },
+  {
+    "id": "b6d3e713-5b4a-4965-aa0f-914db7b3f69f",
+    "projectId": "forge-1774548235030",
+    "createdAt": "2026-03-26T18:23:14.938Z",
+    "stageId": "core-features",
+    "workPackageId": "core-features-1",
+    "type": "failure",
+    "category": "other",
+    "description": "Claude Code process exited with code 2147483651",
+    "rootCause": "Unclassified error: Claude Code process exited with code 2147483651",
+    "resolution": "Pending retry with adjusted approach",
+    "preventionRule": "Watch for: Claude Code process exited with code 2147483651"
+  }
+]
