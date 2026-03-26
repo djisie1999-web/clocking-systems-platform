@@ -1,3 +1,4 @@
+// Build v2 — 2026-03-26T22:00 — force clean static output
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
