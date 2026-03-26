@@ -5,7 +5,10 @@ nixPkgs = ["nodejs_20", "openssl"]
 cmds = [
   "npm ci",
   "npx prisma generate",
-  "npm run build"
+  "npx prisma db push --skip-generate",
+  "npm run build",
+  "cp -r .next/static .next/standalone/.next/static",
+  "cp -r public .next/standalone/public"
 ]
 
 [start]
