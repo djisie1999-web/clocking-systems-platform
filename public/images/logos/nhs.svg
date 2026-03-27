@@ -1,0 +1,27 @@
+<svg viewBox="0 0 148.24 60" xmlns="http://www.w3.org/2000/svg" data-name="Layer 2" id="Layer_2">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #005eb8;
+      }
+
+      .cls-1, .cls-2 {
+        stroke-width: 0px;
+      }
+
+      .cls-2 {
+        fill: #fff;
+      }
+    </style>
+  </defs>
+  <g data-name="Layer 1" id="Layer_1-2">
+    <g data-name="National Health Service  England  logo" id="National_Health_Service_England_logo">
+      <rect height="60" width="148.24" class="cls-1" data-name="Rectangle 1673" id="Rectangle_1673"></rect>
+      <g data-name="Group 1532" id="Group_1532">
+        <path d="M14.49,5.79h16.13l9.88,33.5h.15l6.78-33.49h12.18l-10.24,48.3h-16.05l-10.11-33.42h-.14l-6.7,33.42H4.18L14.49,5.79Z" class="cls-2" data-name="Path 807" id="Path_807"></path>
+        <path d="M64.36,5.79h12.95l-3.81,18.48h15.3l3.81-18.48h12.94l-10.04,48.3h-13.02l4.29-20.68h-15.22l-4.29,20.68h-12.93l10.02-48.3Z" class="cls-2" data-name="Path 808" id="Path_808"></path>
+        <path d="M139.59,16.72c-3.32-1.53-6.94-2.29-10.59-2.22-5.11,0-9.27.76-9.27,4.64,0,6.86,18.75,4.29,18.75,18.96,0,13.35-12.39,16.82-23.6,16.82-5.09-.12-10.14-.96-15-2.49l3-9.83c2.57,1.67,7.68,2.78,11.9,2.78s10.3-.76,10.3-5.74c0-7.76-18.75-4.85-18.75-18.48,0-12.45,10.93-16.2,21.52-16.2,6,0,11.55.63,14.8,2.15l-3.06,9.63Z" class="cls-2" data-name="Path 809" id="Path_809"></path>
+      </g>
+    </g>
+  </g>
+</svg>
