@@ -30,6 +30,26 @@ const PUBLIC_API = [
   "/api/auth/logout",
   "/api/health",
   "/api/webhooks/stripe",
+  "/api/checkout",
+];
+
+/** Public marketing pages — no auth required */
+const PUBLIC_PAGES = [
+  "/about",
+  "/blog",
+  "/case-studies",
+  "/checkout",
+  "/compare",
+  "/contact",
+  "/demo",
+  "/faq",
+  "/hardware",
+  "/privacy",
+  "/products",
+  "/roi-calculator",
+  "/shop",
+  "/terms",
+  "/sitemap.xml",
 ];
 
 // ─── Helpers ─────────────────────────────────────────────────
@@ -71,19 +91,22 @@ export async function middleware(request: NextRequest) {
   const accessToken = request.cookies.get(COOKIE_ACCESS)?.value;
   const payload = accessToken ? await verifyToken(accessToken) : null;
 
+  // Root — show marketing homepage (no redirect)
+  if (pathname === "/") {
+    return NextResponse.next();
+  }
+
+  // Public marketing pages — always allow, no auth needed
+  if (matchesAny(pathname, PUBLIC_PAGES)) {
+    return NextResponse.next();
+  }
+
   // Auth pages — redirect to dashboard when already authenticated
   if (matchesAny(pathname, AUTH_PAGES)) {
     if (payload) {
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }
     return NextResponse.next();
-  }
-
-  // Root — redirect based on auth state
-  if (pathname === "/") {
-    return NextResponse.redirect(
-      new URL(payload ? "/dashboard" : "/sign-in", request.url)
-    );
   }
 
   // Protected pages — require valid token
