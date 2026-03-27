@@ -1,8 +1,8 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Check, ChevronRight, ChevronLeft, Info } from "lucide-react";
+import Image from "next/image";
+import { Check, ChevronRight, ChevronLeft, Info, ShieldCheck, Truck, Phone } from "lucide-react";
 
 // ─── Exact pricing from products.js ──────────────────────────────────────────
 const EMPLOYEE_BANDS = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 120, 150, 200, 250, 300];
@@ -61,7 +61,7 @@ const HARDWARE = [
 const VAT_RATE = 0.2;
 
 function formatGBP(n: number) {
-  return `£${n.toLocaleString("en-GB", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `\u00A3${n.toLocaleString("en-GB", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 interface HardwareSelection {
@@ -70,7 +70,6 @@ interface HardwareSelection {
 }
 
 export default function ShopPage() {
-  const router = useRouter();
   const [step, setStep] = useState(1);
   const [employees, setEmployees] = useState<number | null>(null);
   const [hardwareSelections, setHardwareSelections] = useState<HardwareSelection[]>([]);
@@ -107,31 +106,33 @@ export default function ShopPage() {
       const items = [
         {
           productId: `evotime_pro_${employees}`,
-          productName: `EvoTime Pro — ${employees} employees (annual)`,
-          price: Math.round(softwareExVat * 100),
+          productName: `EvoTime Pro \u2014 ${employees} employees (annual subscription)`,
+          price: Math.round(softwareExVat * 100), // pence
           quantity: 1,
+          type: "software" as const,
         },
         ...hardwareSelections.map((sel) => {
           const hw = HARDWARE.find((h) => h.id === sel.hardwareId)!;
           return {
             productId: hw.id,
             productName: hw.name,
-            price: Math.round(hw.priceExVat * 100),
+            price: Math.round(hw.priceExVat * 100), // pence
             quantity: sel.qty,
+            type: "hardware" as const,
           };
         }),
       ];
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          items,
-          customer: { name: "Customer", email: "customer@example.com" },
-        }),
+        body: JSON.stringify({ items }),
       });
       if (!res.ok) throw new Error("Checkout failed");
-      const data = (await res.json()) as { orderNumber: string };
-      router.push(`/shop/success?order=${data.orderNumber}`);
+      const data = (await res.json()) as { url: string };
+      // Redirect to Stripe Checkout
+      if (data.url) {
+        window.location.href = data.url;
+      }
     } catch {
       alert("Something went wrong. Please call us on 0113 258 7856.");
       setSubmitting(false);
@@ -147,7 +148,7 @@ export default function ShopPage() {
             Buy EvoTime Pro
           </h1>
           <p className="text-blue-200 text-lg">
-            Transparent pricing. No hidden fees. No free trial — we sell, you own.
+            Transparent pricing. No hidden fees. No free trial &mdash; buy today, get onboarded within 2 hours.
           </p>
         </div>
       </div>
@@ -190,18 +191,18 @@ export default function ShopPage() {
           {/* Main */}
           <div className="lg:col-span-2">
 
-            {/* ── STEP 1: Select employees ── */}
+            {/* STEP 1: Select employees */}
             {step === 1 && (
               <div>
                 <h2 className="text-2xl font-bold text-[#0A1628] mb-2">How many employees do you have?</h2>
                 <p className="text-gray-500 mb-6">
-                  Select the band that covers your team. Pricing: <strong>£15/employee/year</strong> for up to 70 employees, <strong>£10/employee/year</strong> for 71+. All prices ex-VAT.
+                  Select the band that covers your team. Pricing: <strong>&pound;15/employee/year</strong> for up to 70 employees, <strong>&pound;10/employee/year</strong> for 71+. All prices ex-VAT.
                 </p>
 
                 <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6 flex gap-2 text-sm text-blue-800">
                   <Info className="w-4 h-4 mt-0.5 flex-shrink-0" />
                   <span>
-                    Choose the next band up from your current headcount so you have room to grow.
+                    <strong>Employee count = software licence tier, not hardware price.</strong> Hardware terminals are always the same price regardless of how many employees you have. Choose the next band up from your current headcount so you have room to grow.
                   </span>
                 </div>
 
@@ -233,10 +234,10 @@ export default function ShopPage() {
                 {employees && softwareCalc && (
                   <div className="mt-6 bg-emerald-50 border border-emerald-200 rounded-xl p-5">
                     <div className="font-semibold text-[#0A1628] mb-1">
-                      EvoTime Pro — {employees} employees
+                      EvoTime Pro &mdash; {employees} employees
                     </div>
                     <div className="text-sm text-gray-500">
-                      {formatGBP(softwareCalc.perUser)}/employee/year × {employees} = <strong className="text-[#0A1628]">{formatGBP(softwareCalc.annual)}/year</strong> ex-VAT
+                      {formatGBP(softwareCalc.perUser)}/employee/year &times; {employees} = <strong className="text-[#0A1628]">{formatGBP(softwareCalc.annual)}/year</strong> ex-VAT
                     </div>
                   </div>
                 )}
@@ -254,12 +255,12 @@ export default function ShopPage() {
               </div>
             )}
 
-            {/* ── STEP 2: Hardware ── */}
+            {/* STEP 2: Hardware */}
             {step === 2 && (
               <div>
                 <h2 className="text-2xl font-bold text-[#0A1628] mb-2">Choose your hardware terminals</h2>
                 <p className="text-gray-500 mb-6">
-                  Add the terminals you need. All prices ex-VAT. Hardware is optional — the software works with compatible existing terminals too.
+                  Add the terminals you need. All prices ex-VAT. Hardware is optional &mdash; EvoTime Pro works with browser-based clocking too.
                 </p>
 
                 <div className="space-y-4">
@@ -273,18 +274,23 @@ export default function ShopPage() {
                         }`}
                       >
                         <div className="flex items-start justify-between gap-4">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="font-semibold text-[#0A1628]">{hw.name}</span>
-                              {hw.popular && (
-                                <span className="text-[11px] font-semibold bg-[#2563EB] text-white px-2 py-0.5 rounded-full">
-                                  Popular
-                                </span>
-                              )}
+                          <div className="flex gap-4 flex-1">
+                            <div className="w-16 h-16 bg-[#F8F9FB] rounded-lg flex-shrink-0 flex items-center justify-center">
+                              <Image src={hw.image} alt={hw.name} width={56} height={56} className="w-14 h-14 object-contain" />
                             </div>
-                            <p className="text-sm text-gray-500 mb-2">{hw.description}</p>
-                            <div className="text-lg font-bold text-[#0A1628]">
-                              {formatGBP(hw.priceExVat)} <span className="text-sm font-normal text-gray-400">ex-VAT per unit</span>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="font-semibold text-[#0A1628]">{hw.name}</span>
+                                {hw.popular && (
+                                  <span className="text-[11px] font-semibold bg-[#2563EB] text-white px-2 py-0.5 rounded-full">
+                                    Popular
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-sm text-gray-500 mb-2">{hw.description}</p>
+                              <div className="text-lg font-bold text-[#0A1628]">
+                                {formatGBP(hw.priceExVat)} <span className="text-sm font-normal text-gray-400">ex-VAT per unit</span>
+                              </div>
                             </div>
                           </div>
                           {/* Quantity stepper */}
@@ -293,7 +299,7 @@ export default function ShopPage() {
                               onClick={() => updateHardwareQty(hw.id, Math.max(0, qty - 1))}
                               className="w-9 h-9 rounded-lg border border-gray-300 flex items-center justify-center text-gray-600 hover:bg-gray-50 font-bold"
                             >
-                              −
+                              &minus;
                             </button>
                             <span className="w-8 text-center font-semibold text-[#0A1628]">{qty}</span>
                             <button
@@ -333,12 +339,12 @@ export default function ShopPage() {
               </div>
             )}
 
-            {/* ── STEP 3: Checkout ── */}
+            {/* STEP 3: Checkout */}
             {step === 3 && (
               <div>
                 <h2 className="text-2xl font-bold text-[#0A1628] mb-2">Order confirmation</h2>
                 <p className="text-gray-500 mb-6">
-                  Review your order below. You&apos;ll be emailed a full invoice after purchase.
+                  Review your order below. You&apos;ll be redirected to Stripe for secure payment.
                 </p>
 
                 <div className="bg-white border border-gray-200 rounded-xl overflow-hidden mb-6">
@@ -350,8 +356,8 @@ export default function ShopPage() {
                   {employees && softwareCalc && (
                     <div className="px-5 py-4 flex items-center justify-between border-b border-gray-100">
                       <div>
-                        <div className="font-medium text-[#0A1628] text-sm">EvoTime Pro — {employees} employees</div>
-                        <div className="text-xs text-gray-400">Annual subscription · {formatGBP(softwareCalc.perUser)}/employee/year</div>
+                        <div className="font-medium text-[#0A1628] text-sm">EvoTime Pro &mdash; {employees} employees</div>
+                        <div className="text-xs text-gray-400">Annual subscription &middot; {formatGBP(softwareCalc.perUser)}/employee/year</div>
                       </div>
                       <div className="font-semibold text-[#0A1628]">{formatGBP(softwareCalc.annual)}</div>
                     </div>
@@ -364,7 +370,7 @@ export default function ShopPage() {
                       <div key={sel.hardwareId} className="px-5 py-4 flex items-center justify-between border-b border-gray-100">
                         <div>
                           <div className="font-medium text-[#0A1628] text-sm">{hw.name}</div>
-                          <div className="text-xs text-gray-400">Qty: {sel.qty} × {formatGBP(hw.priceExVat)}</div>
+                          <div className="text-xs text-gray-400">Qty: {sel.qty} &times; {formatGBP(hw.priceExVat)}</div>
                         </div>
                         <div className="font-semibold text-[#0A1628]">{formatGBP(hw.priceExVat * sel.qty)}</div>
                       </div>
@@ -400,11 +406,11 @@ export default function ShopPage() {
                     disabled={submitting}
                     className="flex-1 inline-flex items-center justify-center gap-2 h-12 rounded-lg text-base font-semibold bg-[#059669] text-white hover:bg-emerald-700 shadow transition-colors disabled:opacity-60"
                   >
-                    {submitting ? "Processing..." : `Place Order — ${formatGBP(totalIncVat)} inc. VAT`}
+                    {submitting ? "Redirecting to Stripe..." : `Pay ${formatGBP(totalIncVat)} inc. VAT`}
                   </button>
                 </div>
                 <p className="text-xs text-gray-400 text-center mt-3">
-                  By placing an order you agree to our{" "}
+                  Secure payment via Stripe. By placing an order you agree to our{" "}
                   <Link href="/terms" className="underline hover:text-gray-600">Terms of Service</Link>.
                   Hardware ships next business day. Software activated within 2 hours.
                 </p>
@@ -432,7 +438,7 @@ export default function ShopPage() {
                   const hw = HARDWARE.find((h) => h.id === sel.hardwareId)!;
                   return (
                     <div key={sel.hardwareId} className="flex justify-between">
-                      <span className="text-gray-500">{hw.name.split(" —")[0]} ×{sel.qty}</span>
+                      <span className="text-gray-500">{hw.name.split(" \u2014")[0]} &times;{sel.qty}</span>
                       <span className="font-medium text-[#0A1628]">{formatGBP(hw.priceExVat * sel.qty)}</span>
                     </div>
                   );
@@ -460,15 +466,15 @@ export default function ShopPage() {
             {/* Trust */}
             <div className="bg-[#F8F9FB] border border-gray-200 rounded-xl p-5 text-sm space-y-3">
               {[
-                "Next day hardware delivery",
-                "3-year hardware warranty",
-                "UK-based phone support",
-                "GDPR compliant software",
-                "Cancel software anytime",
+                { icon: Truck, text: "Next day hardware delivery" },
+                { icon: ShieldCheck, text: "3-year hardware warranty" },
+                { icon: Phone, text: "UK-based phone support" },
+                { icon: ShieldCheck, text: "GDPR compliant software" },
+                { icon: Check, text: "Cancel software anytime" },
               ].map((item) => (
-                <div key={item} className="flex items-center gap-2 text-gray-600">
-                  <Check className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                  {item}
+                <div key={item.text} className="flex items-center gap-2 text-gray-600">
+                  <item.icon className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                  {item.text}
                 </div>
               ))}
             </div>

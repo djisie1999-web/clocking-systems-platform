@@ -1,49 +1,33 @@
 import { NextResponse } from "next/server";
+import Stripe from "stripe";
 import { z } from "zod";
 
-// ─── Validation Schemas ───────────────────────────────────────────────────────
+// ─── Stripe Client ──────────────────────────────────────────────────────────
+
+const stripe = new Stripe(
+  process.env.STRIPE_SECRET_KEY ?? "",
+  { apiVersion: "2025-04-30.basil" as Stripe.LatestApiVersion, typescript: true }
+);
+
+const APP_URL =
+  process.env.NEXT_PUBLIC_APP_URL ?? "https://cs-site-production.up.railway.app";
+
+// ─── Validation ─────────────────────────────────────────────────────────────
 
 const CheckoutItemSchema = z.object({
-  productId: z.string().min(1, "productId is required"),
-  productName: z.string().min(1, "productName is required"),
-  price: z.number().min(0, "price must be non-negative"),
-  quantity: z.number().int().min(1, "quantity must be at least 1"),
-});
-
-const AddressSchema = z.object({
-  line1: z.string().min(1, "Address line 1 is required"),
-  city: z.string().min(1, "City is required"),
-  postcode: z.string().min(1, "Postcode is required"),
-  country: z.string().min(1, "Country is required"),
-});
-
-const CustomerSchema = z.object({
-  name: z.string().min(1, "Customer name is required"),
-  email: z.string().email("Invalid customer email"),
-  company: z.string().optional(),
-  phone: z.string().optional(),
-  address: AddressSchema.optional(),
+  productId: z.string().min(1),
+  productName: z.string().min(1),
+  price: z.number().min(0), // in pence ex-VAT
+  quantity: z.number().int().min(1),
+  type: z.enum(["software", "hardware"]).default("hardware"),
 });
 
 const CheckoutRequestSchema = z.object({
-  items: z
-    .array(CheckoutItemSchema)
-    .min(1, "Cart must contain at least one item"),
-  customer: CustomerSchema,
+  items: z.array(CheckoutItemSchema).min(1),
+  customerEmail: z.string().email().optional(),
 });
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function generateOrderNumber(): string {
-  const prefix = "CS";
-  const timestamp = Date.now().toString().slice(-6);
-  const random = Math.floor(Math.random() * 1000)
-    .toString()
-    .padStart(3, "0");
-  return `${prefix}-${timestamp}-${random}`;
-}
-
-// ─── POST /api/checkout ───────────────────────────────────────────────────────
+// ─── POST /api/checkout ─────────────────────────────────────────────────────
 
 export async function POST(request: Request) {
   try {
@@ -55,47 +39,71 @@ export async function POST(request: Request) {
     const parsed = CheckoutRequestSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
-        {
-          error: "Validation failed",
-          details: parsed.error.flatten().fieldErrors,
-        },
+        { error: "Validation failed", details: parsed.error.flatten().fieldErrors },
         { status: 422 }
       );
     }
 
-    const { items, customer } = parsed.data;
+    const { items, customerEmail } = parsed.data;
 
-    const subtotal = items.reduce(
-      (sum, item) => sum + item.price * item.quantity,
-      0
+    // Separate software (subscription) and hardware (one-off) items
+    const hasSoftware = items.some((i) => i.type === "software");
+    const hasHardware = items.some((i) => i.type === "hardware");
+
+    // Build Stripe line items — all prices include 20% VAT applied by Stripe
+    const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = items.map(
+      (item) => ({
+        price_data: {
+          currency: "gbp",
+          unit_amount: item.price, // pence ex-VAT — Stripe will add tax
+          product_data: {
+            name: item.productName,
+          },
+          ...(item.type === "software"
+            ? { recurring: { interval: "year" as const } }
+            : {}),
+        },
+        quantity: item.quantity,
+      })
     );
-    const vat = Math.round(subtotal * 0.2);
-    const total = subtotal + vat;
 
-    const orderNumber = generateOrderNumber();
-    const sessionId = `sess_${Math.random().toString(36).slice(2)}`;
+    // Determine checkout mode
+    // If mixed: use subscription mode (Stripe handles one-off items in subscription sessions)
+    const mode: Stripe.Checkout.SessionCreateParams.Mode = hasSoftware
+      ? "subscription"
+      : "payment";
 
-    const orderSummary = {
-      sessionId,
-      orderNumber,
-      status: "confirmed",
-      customer,
-      items,
-      pricing: {
-        subtotal,
-        vat,
-        total,
-        currency: "GBP",
+    const sessionParams: Stripe.Checkout.SessionCreateParams = {
+      mode,
+      line_items: lineItems,
+      success_url: `${APP_URL}/shop/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${APP_URL}/shop`,
+      automatic_tax: { enabled: false },
+      // Apply 20% VAT manually via tax rate
+      ...(mode === "payment"
+        ? {}
+        : {}),
+      metadata: {
+        source: "clocking-systems-website",
+        hasHardware: hasHardware ? "true" : "false",
+        hasSoftware: hasSoftware ? "true" : "false",
       },
-      estimatedDelivery: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000)
-        .toISOString()
-        .split("T")[0],
-      createdAt: new Date().toISOString(),
     };
 
-    return NextResponse.json(orderSummary, { status: 201 });
+    if (customerEmail) {
+      sessionParams.customer_email = customerEmail;
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionParams);
+
+    return NextResponse.json(
+      { url: session.url, sessionId: session.id },
+      { status: 200 }
+    );
   } catch (error) {
     console.error("[checkout]", error);
-    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+    const message =
+      error instanceof Error ? error.message : "Checkout creation failed";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

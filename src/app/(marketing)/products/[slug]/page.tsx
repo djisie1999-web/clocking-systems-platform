@@ -1,324 +1,213 @@
-"use client";
-import { useState, useEffect } from "react";
+import type { Metadata } from "next";
 import Link from "next/link";
-import { useParams } from "next/navigation";
-import { Check, ShoppingCart, ArrowLeft, Minus, Plus } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
+import Image from "next/image";
+import { Check, ArrowRight } from "lucide-react";
+import { notFound } from "next/navigation";
 
-interface Product {
-  id: string;
-  slug: string;
+const productData: Record<string, {
   name: string;
-  category: "hardware" | "software" | "bundle";
-  type: "one_off" | "subscription";
-  price: number;
-  priceInterval?: "month" | "year";
-  shortDescription: string;
+  subtitle: string;
   description: string;
+  image: string;
+  price: string;
+  priceDetail: string;
   features: string[];
-  specs: Record<string, string>;
-  badge?: string;
-  popular?: boolean;
-}
-
-function formatPrice(price: number, type: string, interval?: string) {
-  const pounds = price / 100;
-  if (type === "subscription") {
-    return `£${pounds}/${interval}`;
-  }
-  return `£${pounds.toLocaleString()}`;
-}
-
-function addToCart(product: Product, quantity: number) {
-  try {
-    const raw = localStorage.getItem("cs_cart");
-    const cart: { items: { productId: string; quantity: number; name: string; price: number; type: string }[] } = raw
-      ? JSON.parse(raw)
-      : { items: [] };
-    const existing = cart.items.find((i) => i.productId === product.id);
-    if (existing) {
-      existing.quantity += quantity;
-    } else {
-      cart.items.push({
-        productId: product.id,
-        quantity,
-        name: product.name,
-        price: product.price,
-        type: product.type,
-      });
-    }
-    localStorage.setItem("cs_cart", JSON.stringify(cart));
-    alert(`${product.name} (×${quantity}) added to cart!`);
-  } catch {
-    // ignore
-  }
-}
-
-const categoryColors: Record<string, string> = {
-  hardware: "bg-blue-600",
-  software: "bg-indigo-600",
-  bundle: "bg-emerald-600",
+  ctaLabel: string;
+  ctaHref: string;
+  ctaColor: string;
+  metaTitle: string;
+  metaDescription: string;
+}> = {
+  evotime: {
+    name: "EvoTime",
+    subtitle: "Hardware Terminals + Free Cloud Software",
+    description:
+      "EvoTime is a range of biometric and card-based clocking terminals that connect to our free cloud dashboard. Buy the terminal hardware once, get the software for life. Ideal for businesses with 5\u2013100 employees who need reliable attendance tracking without a monthly subscription.",
+    image: "/images/products/biotime-face.png",
+    price: "From \u00A3275 + VAT",
+    priceDetail: "One-off purchase per terminal. Free cloud software included.",
+    features: [
+      "Facial recognition, fingerprint, or card/fob clocking",
+      "Free EvoTime cloud dashboard \u2014 see who\u2019s in, track hours, export data",
+      "WiFi and Ethernet connectivity",
+      "3-year hardware warranty",
+      "Next day UK delivery",
+      "DIY installation with online guides",
+      "Employee count bands (10, 20, 30\u2026300) determine the software licence tier, NOT the hardware price",
+      "Works offline \u2014 syncs when connection is restored",
+    ],
+    ctaLabel: "View hardware terminals",
+    ctaHref: "/hardware",
+    ctaColor: "bg-[#059669] text-white hover:bg-emerald-700",
+    metaTitle: "EvoTime \u2014 Hardware Terminals + Free Software",
+    metaDescription:
+      "EvoTime biometric clocking terminals from \u00A3275 ex-VAT. Face, fingerprint, card and fob options. Free cloud software included. 3-year warranty. Next day UK delivery.",
+  },
+  "evotime-pro": {
+    name: "EvoTime Pro",
+    subtitle: "Premium Cloud Time & Attendance Platform",
+    description:
+      "EvoTime Pro is a full time and attendance management platform. Manage shifts, rotas, absence, overtime, employee self-service, and payroll exports \u2014 all from one cloud dashboard. Works with EvoTime hardware terminals OR standalone (browser-based clocking).",
+    image: "/demo/dashboard.png",
+    price: "From \u00A315/employee/year",
+    priceDetail: "\u00A315/user/year (1\u201370 employees), \u00A310/user/year (71+). Annual billing. Ex-VAT.",
+    features: [
+      "Full shift planning and rota management",
+      "Absence management with Bradford Factor scoring",
+      "Customisable overtime rules and calculations",
+      "One-click payroll export to Sage, QuickBooks and more",
+      "Employee self-service portal \u2014 leave requests, viewing schedules",
+      "Mobile app for managers and employees",
+      "Compliance-ready reports and audit trails",
+      "Real-time dashboard \u2014 who\u2019s in, who\u2019s late, who\u2019s on leave",
+      "Works with EvoTime hardware OR standalone browser clocking",
+      "No free trial \u2014 buy today, get onboarded within 2 hours",
+    ],
+    ctaLabel: "Buy EvoTime Pro",
+    ctaHref: "/shop",
+    ctaColor: "bg-[#2563EB] text-white hover:bg-blue-700",
+    metaTitle: "EvoTime Pro \u2014 Cloud Time & Attendance Software",
+    metaDescription:
+      "EvoTime Pro: shifts, rotas, absence management, overtime rules and payroll exports from \u00A315/user/year. Full cloud T&A platform for UK businesses. Buy now.",
+  },
+  enterprise: {
+    name: "Enterprise Workforce Management",
+    subtitle: "Custom Deployment for Large Organisations",
+    description:
+      "For businesses with 100\u20135,000+ employees, our enterprise solution is fully tailored to your requirements. Multi-site deployments, custom integrations, dedicated account management, and 24/7 priority support.",
+    image: "/images/products/totaltime-hero.png",
+    price: "Bespoke pricing",
+    priceDetail: "Contact us for a custom quote based on your requirements.",
+    features: [
+      "Multi-site and multi-branch support",
+      "On-site installation, configuration and staff training",
+      "SSO (SAML / Azure AD) integration",
+      "Custom integrations with your existing HR and payroll systems",
+      "Dedicated account manager",
+      "24/7 priority support with SLA",
+      "Full audit logs and compliance reporting",
+      "Visitor management and contractor modules",
+      "Mobile GPS clocking for field workers",
+    ],
+    ctaLabel: "Request a quote",
+    ctaHref: "/contact",
+    ctaColor: "bg-[#7C3AED] text-white hover:bg-purple-700",
+    metaTitle: "Enterprise Workforce Management \u2014 Clocking Systems",
+    metaDescription:
+      "Enterprise time and attendance for 100\u20135,000+ employees. Multi-site, custom integrations, dedicated support. Contact us for a bespoke quote.",
+  },
 };
 
-export default function ProductDetailPage() {
-  const params = useParams();
-  const slug = params?.slug as string;
+export function generateStaticParams() {
+  return Object.keys(productData).map((slug) => ({ slug }));
+}
 
-  const [product, setProduct] = useState<Product | null>(null);
-  const [related, setRelated] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [notFound, setNotFound] = useState(false);
-  const [quantity, setQuantity] = useState(1);
+export function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  // Need to handle async params properly for Next 15
+  return params.then(({ slug }) => {
+    const product = productData[slug];
+    if (!product) return { title: "Product Not Found" };
+    return {
+      title: product.metaTitle,
+      description: product.metaDescription,
+      openGraph: {
+        title: product.metaTitle,
+        description: product.metaDescription,
+      },
+    };
+  });
+}
 
-  useEffect(() => {
-    if (!slug) return;
-    fetch(`/api/products/${slug}`)
-      .then((r) => {
-        if (r.status === 404) {
-          setNotFound(true);
-          setLoading(false);
-          return null;
-        }
-        return r.json();
-      })
-      .then((data) => {
-        if (data) {
-          setProduct(data.product);
-          setRelated(data.related ?? []);
-        }
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
-  }, [slug]);
-
-  if (loading) {
-    return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <Skeleton className="h-6 w-32 mb-8" />
-        <div className="grid md:grid-cols-2 gap-12">
-          <Skeleton className="h-80 rounded-xl" />
-          <div className="space-y-4">
-            <Skeleton className="h-8 w-3/4" />
-            <Skeleton className="h-6 w-1/4" />
-            <Skeleton className="h-20 w-full" />
-            <Skeleton className="h-12 w-full" />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (notFound || !product) {
-    return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
-        <h1 className="text-2xl font-bold text-gray-900 mb-4">Product Not Found</h1>
-        <p className="text-gray-500 mb-8">
-          This product doesn&apos;t exist or has been removed.
-        </p>
-        <Link
-          href="/products"
-          className="inline-flex items-center gap-2 text-blue-600 hover:underline"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Products
-        </Link>
-      </div>
-    );
-  }
+export default async function ProductDetailPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const product = productData[slug];
+  if (!product) notFound();
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      {/* Breadcrumb */}
-      <nav className="flex items-center gap-2 text-sm text-gray-500 mb-8">
-        <Link href="/" className="hover:text-gray-900">Home</Link>
-        <span>/</span>
-        <Link href="/products" className="hover:text-gray-900">Products</Link>
-        <span>/</span>
-        <span className="text-gray-900">{product.name}</span>
-      </nav>
-
-      <div className="grid md:grid-cols-2 gap-12 mb-16">
-        {/* Image */}
-        <div>
-          <div
-            className={`${categoryColors[product.category] ?? "bg-gray-500"} rounded-2xl h-80 flex items-center justify-center relative`}
-          >
-            {product.badge && (
-              <div className="absolute top-4 left-4">
-                <span className="bg-white text-gray-800 text-sm font-semibold px-3 py-1 rounded-full shadow">
-                  {product.badge}
-                </span>
-              </div>
-            )}
-            <div className="w-28 h-28 rounded-2xl bg-white/20 flex items-center justify-center">
-              <span className="text-white font-bold text-5xl">
-                {product.name.charAt(0)}
-              </span>
-            </div>
-          </div>
+    <>
+      {/* Header */}
+      <div className="bg-[#0A1628] text-white py-14">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <nav className="text-sm text-blue-300 mb-4">
+            <Link href="/" className="hover:text-white">Home</Link>
+            <span className="mx-2">/</span>
+            <Link href="/products" className="hover:text-white">Products</Link>
+            <span className="mx-2">/</span>
+            <span className="text-white">{product.name}</span>
+          </nav>
+          <h1 className="text-3xl md:text-4xl font-bold mb-2">{product.name}</h1>
+          <p className="text-blue-200 text-lg">{product.subtitle}</p>
         </div>
+      </div>
 
-        {/* Details */}
-        <div>
-          <div className="flex items-center gap-3 mb-3">
-            <Badge
-              variant={
-                product.category === "hardware"
-                  ? "default"
-                  : product.category === "software"
-                  ? "secondary"
-                  : "success"
-              }
-            >
-              {product.category}
-            </Badge>
-            {product.popular && (
-              <Badge variant="warning">Popular</Badge>
-            )}
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="grid md:grid-cols-2 gap-12 mb-16">
+          {/* Image */}
+          <div className="bg-[#F8F9FB] rounded-2xl p-8 flex items-center justify-center">
+            <Image
+              src={product.image}
+              alt={product.name}
+              width={400}
+              height={300}
+              className="max-h-72 w-auto object-contain"
+            />
           </div>
 
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">{product.name}</h1>
-          <p className="text-gray-500 mb-4">{product.shortDescription}</p>
+          {/* Details */}
+          <div>
+            <p className="text-gray-600 mb-6 leading-relaxed">{product.description}</p>
 
-          <div className="text-3xl font-bold text-blue-600 mb-6">
-            {formatPrice(product.price, product.type, product.priceInterval)}
-          </div>
-
-          <p className="text-sm text-gray-600 leading-relaxed mb-6">
-            {product.description}
-          </p>
-
-          {/* Quantity selector (hardware/bundle only) */}
-          {product.type === "one_off" && (
-            <div className="flex items-center gap-3 mb-6">
-              <span className="text-sm font-medium text-gray-700">Quantity:</span>
-              <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
-                <button
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="w-10 h-10 flex items-center justify-center hover:bg-gray-50 transition-colors"
-                >
-                  <Minus className="w-4 h-4 text-gray-500" />
-                </button>
-                <span className="w-10 text-center text-sm font-medium">{quantity}</span>
-                <button
-                  onClick={() => setQuantity(quantity + 1)}
-                  className="w-10 h-10 flex items-center justify-center hover:bg-gray-50 transition-colors"
-                >
-                  <Plus className="w-4 h-4 text-gray-500" />
-                </button>
-              </div>
+            <div className="mb-6">
+              <div className="text-3xl font-bold text-[#0A1628] mb-1">{product.price}</div>
+              <div className="text-sm text-gray-400">{product.priceDetail}</div>
             </div>
-          )}
 
-          {/* Add to cart */}
-          <div className="flex flex-col sm:flex-row gap-3 mb-8">
-            <button
-              onClick={() => addToCart(product, quantity)}
-              className="flex-1 inline-flex items-center justify-center gap-2 h-12 rounded-lg text-base font-semibold bg-blue-600 text-white hover:bg-blue-700 shadow transition-colors"
-            >
-              <ShoppingCart className="w-5 h-5" />
-              Add to Cart
-            </button>
             <Link
-              href="/checkout"
-              onClick={() => addToCart(product, quantity)}
-              className="flex-1 inline-flex items-center justify-center gap-2 h-12 rounded-lg text-base font-semibold border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 shadow-sm transition-colors"
+              href={product.ctaHref}
+              className={`inline-flex items-center justify-center gap-2 h-12 px-8 rounded-lg text-base font-semibold shadow transition-colors ${product.ctaColor}`}
             >
-              Buy Now
+              {product.ctaLabel}
+              <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
-
-          {/* Trust badges */}
-          <div className="flex flex-wrap gap-4 text-xs text-gray-500">
-            <span className="flex items-center gap-1">
-              <Check className="w-3.5 h-3.5 text-emerald-500" />
-              Free UK delivery
-            </span>
-            <span className="flex items-center gap-1">
-              <Check className="w-3.5 h-3.5 text-emerald-500" />
-              30-day returns
-            </span>
-            <span className="flex items-center gap-1">
-              <Check className="w-3.5 h-3.5 text-emerald-500" />
-              UK phone support
-            </span>
-          </div>
         </div>
-      </div>
 
-      {/* Features & Specs */}
-      <div className="grid md:grid-cols-2 gap-12 mb-16">
         {/* Features */}
-        <div>
-          <h2 className="text-xl font-bold text-gray-900 mb-6">Key Features</h2>
-          <ul className="space-y-3">
+        <div className="mb-16">
+          <h2 className="text-2xl font-bold text-[#0A1628] mb-6">Key Features</h2>
+          <div className="grid sm:grid-cols-2 gap-4">
             {product.features.map((feature) => (
-              <li key={feature} className="flex items-start gap-3 text-sm text-gray-700">
-                <div className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center shrink-0 mt-0.5">
+              <div key={feature} className="flex items-start gap-3 bg-white border border-gray-200 rounded-xl p-4">
+                <div className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0 mt-0.5">
                   <Check className="w-3 h-3 text-emerald-600" />
                 </div>
-                {feature}
-              </li>
+                <span className="text-sm text-gray-700">{feature}</span>
+              </div>
             ))}
-          </ul>
+          </div>
         </div>
 
-        {/* Specs */}
-        <div>
-          <h2 className="text-xl font-bold text-gray-900 mb-6">Specifications</h2>
-          <div className="rounded-xl border border-gray-200 overflow-hidden">
-            <table className="w-full text-sm">
-              <tbody>
-                {Object.entries(product.specs).map(([key, value], i) => (
-                  <tr
-                    key={key}
-                    className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}
-                  >
-                    <td className="px-4 py-3 font-medium text-gray-700 w-1/2">
-                      {key}
-                    </td>
-                    <td className="px-4 py-3 text-gray-600">{value}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        {/* Cross-links */}
+        <div className="bg-[#F8F9FB] border border-gray-200 rounded-2xl p-8 text-center">
+          <h2 className="text-xl font-bold text-[#0A1628] mb-3">Compare all products</h2>
+          <p className="text-gray-500 mb-6">See how our plans compare side by side.</p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link
+              href="/compare"
+              className="inline-flex items-center justify-center gap-2 h-11 px-6 rounded-lg text-sm font-semibold border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition-colors"
+            >
+              Compare plans
+            </Link>
+            <Link
+              href="/demo"
+              className="inline-flex items-center justify-center gap-2 h-11 px-6 rounded-lg text-sm font-semibold bg-[#2563EB] text-white hover:bg-blue-700 transition-colors"
+            >
+              See EvoTime Pro demo
+              <ArrowRight className="w-4 h-4" />
+            </Link>
           </div>
         </div>
       </div>
-
-      {/* Related Products */}
-      {related.length > 0 && (
-        <div>
-          <h2 className="text-xl font-bold text-gray-900 mb-6">Related Products</h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {related.map((rel) => (
-              <Link
-                key={rel.id}
-                href={`/products/${rel.slug}`}
-                className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow flex flex-col"
-              >
-                <div
-                  className={`h-28 ${categoryColors[rel.category] ?? "bg-gray-500"} flex items-center justify-center`}
-                >
-                  <span className="text-white font-bold text-3xl">
-                    {rel.name.charAt(0)}
-                  </span>
-                </div>
-                <div className="p-4">
-                  <h3 className="font-semibold text-gray-900 text-sm mb-1">
-                    {rel.name}
-                  </h3>
-                  <p className="text-xs text-gray-500 mb-2">{rel.shortDescription}</p>
-                  <span className="font-bold text-blue-600 text-sm">
-                    {formatPrice(rel.price, rel.type, rel.priceInterval)}
-                  </span>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
+    </>
   );
 }

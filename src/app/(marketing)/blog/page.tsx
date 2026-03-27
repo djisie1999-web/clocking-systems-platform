@@ -55,6 +55,16 @@ const posts = [
     readTime: 9,
     date: "March 2025",
   },
+  {
+    slug: "bradford-factor-calculator",
+    category: "Free Tool",
+    categoryColor: "bg-indigo-100 text-indigo-700",
+    title: "Bradford Factor Calculator — Free Online Tool",
+    excerpt:
+      "Calculate Bradford Factor scores instantly for your employees. Understand absence patterns, learn the formula, and see how EvoTime Pro automates absence management.",
+    readTime: 5,
+    date: "March 2025",
+  },
 ];
 
 export default function BlogPage() {
