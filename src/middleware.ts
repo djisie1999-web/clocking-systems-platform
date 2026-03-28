@@ -31,6 +31,10 @@ const PUBLIC_API = [
   "/api/health",
   "/api/webhooks/stripe",
   "/api/checkout",
+  "/api/contact",
+  "/api/products",
+  "/api/blog",
+  "/api/roi",
 ];
 
 /** Public marketing pages — no auth required */
@@ -49,6 +53,7 @@ const PUBLIC_PAGES = [
   "/roi-calculator",
   "/shop",
   "/terms",
+  "/kiosk",
   "/sitemap.xml",
 ];
 
