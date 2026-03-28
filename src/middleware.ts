@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
-import { COOKIE_ACCESS } from "@/lib/auth";
+// Inlined to avoid pulling bcryptjs/prisma into edge runtime via @/lib/auth
+const COOKIE_ACCESS = "csp_access_token";
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || "csp-dev-secret-key-please-change-in-production"
